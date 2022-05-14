@@ -127,39 +127,43 @@ while running:
 		if event.type == pygame.QUIT:
 			running = False
 
-		if event.type == pygame.MOUSEMOTION:
-			pygame.draw.rect(screen, BLACK, (0,0, width, size))
-			posx = event.pos[0]
-			if player == 1:
-				pygame.draw.circle(screen, RED, (posx, int(size / 2)), RADIUS)
+		# if event.type == pygame.MOUSEMOTION:
+			# pygame.draw.rect(screen, BLACK, (0,0, width, size))
+			# posx = event.pos[0]
+			# if player == 1:
+			# 	pygame.draw.circle(screen, RED, (posx, int(size / 2)), RADIUS)
+
 			# elif player == 2: 
 			#     pygame.draw.circle(screen, YELLOW, (posx, int(size / 2)), RADIUS)
 		
 		pygame.display.update()
 
 		if event.type == pygame.MOUSEBUTTONDOWN:
-			pygame.draw.rect(screen, BLACK, (0,0, width, size))
-			posx = event.pos[0]
-			column = int(math.floor(posx / size))
-			for row in reversed(range(ROW)):
-				is_column_full = True
-				if is_valid_location(GameBoard, row, column):
-					drop_piece(GameBoard, row, column, player)
-					print(GameBoard)
-					if winning(GameBoard, player):
-						label = font.render(f"Player {player} wins!!", 1, RED)
-						screen.blit(label, (20,10))
-						print(f"Player {player} won!")
-						running = False
-					is_column_full = False
-					break
-			if is_column_full:
-				print(f"Column {column + 1} is full! Don't try to break me, player {player}. Try again.")
-			else:
+			while True:
+				if running:
+					searchingForNonFullColumns = True
+					while searchingForNonFullColumns:
+						coordinates = opponent_move(GameBoard, player)
+						column = coordinates[0]
+						row = coordinates[1]
+						for row in reversed(range(ROW)):
+							is_column_full = True
+							if is_valid_location(GameBoard, row, column):
+								drop_piece(GameBoard, row, column, player)
+								print(GameBoard)
+								if winning(GameBoard, player):
+									label = font.render(f"Player {player} wins!!", 1, RED)
+									screen.blit(label, (20,10))
+									print(f"Player {player} won!")
+									running = False
+								is_column_full = False
+								break
+						if not is_column_full:
+							break
+
 				player += 1
 
 				draw_board(GameBoard)
-				pygame.time.wait(1000)
 
 				if running:
 					searchingForNonFullColumns = True
@@ -185,5 +189,6 @@ while running:
 					player = 1
 					draw_board(GameBoard)
 
-			if not running:
-				pygame.time.wait(2000)
+				if not running:
+					pygame.time.wait(2000)
+					break
