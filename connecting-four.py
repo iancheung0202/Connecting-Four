@@ -39,7 +39,8 @@ def winning(board, num):
 				return True
 
 def opponent_move(board, num):
-	while num > 0:
+	playerlist = [1,2]
+	while num in playerlist:
 		for column in range(COLUMN-3): # Check horizontal row
 			for row in range(ROW):
 				if board[row][column] == 0 and board[row][column+1] == num and board[row][column+2] == num and board[row][column+3] == num:
@@ -84,7 +85,13 @@ def opponent_move(board, num):
 				if board[row-3][column+3] == 0 and board[row][column] == num and board[row-1][column+1] == num and board[row-2][column+2] == num:
 					return [column + 3, row - 3]
 				
-		num -= 1
+		if num == 1:
+			num = 2
+			playerlist.remove(1)
+		elif num == 2:
+			num = 1
+			playerlist.remove(2)
+
 	
 	return [random.randint(0, COLUMN-1), random.randint(0, ROW-1)]
 
@@ -100,9 +107,7 @@ def draw_board(board):
 				pygame.draw.circle(screen, BLACK, (int((column + 0.5) * size), int((row + 1.5) * size)), RADIUS)
 	pygame.display.update()
 
-GameBoard = create_board(ROW, COLUMN)
-
-running = True
+game_not_over = True
 turns = 1
 PLAYER_NUM = 2
 
@@ -120,8 +125,9 @@ font = pygame.font.SysFont("monospace", 35)
 
 player = 1
 
-draw_board(GameBoard)
-while running:
+trials = 10
+one_wins = two_wins = 0
+while game_not_over:
 	
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
@@ -137,58 +143,78 @@ while running:
 			#     pygame.draw.circle(screen, YELLOW, (posx, int(size / 2)), RADIUS)
 		
 		pygame.display.update()
-
+		running = True
 		if event.type == pygame.MOUSEBUTTONDOWN:
-			while True:
-				if running:
-					searchingForNonFullColumns = True
-					while searchingForNonFullColumns:
-						coordinates = opponent_move(GameBoard, player)
-						column = coordinates[0]
-						row = coordinates[1]
-						for row in reversed(range(ROW)):
-							is_column_full = True
-							if is_valid_location(GameBoard, row, column):
-								drop_piece(GameBoard, row, column, player)
-								print(GameBoard)
-								if winning(GameBoard, player):
-									label = font.render(f"Player {player} wins!!", 1, RED)
-									screen.blit(label, (20,10))
-									print(f"Player {player} won!")
-									running = False
-								is_column_full = False
-								break
-						if not is_column_full:
-							break
-
-				player += 1
-
+			for i in range(trials):
+				GameBoard = create_board(ROW, COLUMN)
 				draw_board(GameBoard)
-
-				if running:
-					searchingForNonFullColumns = True
-					while searchingForNonFullColumns:
-						coordinates = opponent_move(GameBoard, player)
-						column = coordinates[0]
-						row = coordinates[1]
-						for row in reversed(range(ROW)):
-							is_column_full = True
-							if is_valid_location(GameBoard, row, column):
-								drop_piece(GameBoard, row, column, player)
-								print(GameBoard)
-								if winning(GameBoard, player):
-									label = font.render(f"Player {player} wins!!", 1, YELLOW)
-									screen.blit(label, (20,10))
-									print(f"Player {player} won!")
-									running = False
-								is_column_full = False
+				while True:
+					if running:
+						searchingForNonFullColumns = True
+						while searchingForNonFullColumns:
+							coordinates = opponent_move(GameBoard, player)
+							column = coordinates[0]
+							row = coordinates[1]
+							for row in reversed(range(ROW)):
+								is_column_full = True
+								if is_valid_location(GameBoard, row, column):
+									drop_piece(GameBoard, row, column, player)
+									print(GameBoard)
+									if winning(GameBoard, player):
+										label = font.render(f"Player {player} wins!!", 1, RED)
+										screen.blit(label, (20,10))
+										print(f"Player {player} won!")
+										one_wins += 1
+										running = False
+									is_column_full = False
+									break
+								# else:
+								# 	is_column_full = False
+								# 	break
+							if not is_column_full:
 								break
-						if not is_column_full:
-							break
 
-					player = 1
+					player += 1
+
 					draw_board(GameBoard)
 
-				if not running:
-					pygame.time.wait(2000)
-					break
+					if running:
+						searchingForNonFullColumns = True
+						while searchingForNonFullColumns:
+							coordinates = opponent_move(GameBoard, player)
+							column = coordinates[0]
+							row = coordinates[1]
+							for row in reversed(range(ROW)):
+								is_column_full = True
+								if is_valid_location(GameBoard, row, column):
+									drop_piece(GameBoard, row, column, player)
+									print(GameBoard)
+									if winning(GameBoard, player):
+										label = font.render(f"Player {player} wins!!", 1, YELLOW)
+										screen.blit(label, (20,10))
+										print(f"Player {player} won!")
+										two_wins += 1
+										running = False
+										
+									is_column_full = False
+									break
+								# else:
+								# 	running = False
+								# 	is_column_full = False
+								# 	break
+							if not is_column_full:
+								break
+
+						player = 1
+						draw_board(GameBoard)
+						label = font.render(f" ", 1, YELLOW)
+						screen.blit(label, (20,10))
+
+					if not running:
+						# pygame.time.wait(2000)
+						if i == (trials-1):
+							print(f"Trials: {trials}\n\nAgent 1 won {one_wins} times\nAgent 2 won {two_wins} times\n\nAgent 1 win rate: {one_wins / trials * 100} %\nAgent 2 win rate: {two_wins / trials * 100} %")
+							game_not_over = False
+						else:
+							running = True
+						break
