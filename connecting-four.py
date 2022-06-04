@@ -2,6 +2,7 @@ import numpy as np
 import random
 import pygame
 import sys
+import math
 
 BLUE = (0,0,255)
 BLACK = (0,0,0)
@@ -13,6 +14,8 @@ COLUMN_COUNT = 7
 
 AI_1 = 0
 AI_2 = 1
+
+DEPTH = 4
 
 EMPTY = 0
 AI_1_PIECE = 1
@@ -135,6 +138,7 @@ def pick_best_move(board, piece):
 		elif score == best_score:
 			best_score = score
 			best_column.append(column)
+			
 	return random.choice(best_column)
 
 def draw_board(board):
@@ -151,12 +155,67 @@ def draw_board(board):
 				pygame.draw.circle(screen, YELLOW, (int((column + 0.5) * box_size), height-int((row + 0.5) * box_size)), radius)
 	pygame.display.update()
 
+def minimax(board, depth, x, y, player_piece, maximizingPlayer):
+	if player_piece == 1:
+		piece = 1
+		opp_piece = 2
+	elif player_piece == 2:
+		piece = 2
+		opp_piece = 1
+
+	valid_locations = get_valid_locations(board)
+	terminal = check_winning_move(board, opp_piece) or check_winning_move(board, piece) or len(get_valid_locations(board)) == 0
+	
+	if terminal:
+		if check_winning_move(board, piece):
+			return (None, 100000)
+		elif check_winning_move(board, opp_piece):
+			return (None, -100000)
+		else: # Game is over, no more valid moves
+			return (None, 0)
+	elif depth == 0:
+			return (None, score_position(board, piece))
+
+	if maximizingPlayer:
+		value = -math.inf
+		column = random.choice(valid_locations)
+		for col in valid_locations:
+			row = get_available_row_in_column(board, col)
+			temporary_board = board.copy()
+			drop_piece(temporary_board, row, col, piece)
+			new_score = minimax(temporary_board, depth - 1, x, y, piece, False)[1]
+			if new_score > value:
+				value = new_score
+				column = col
+			x = max(x, value)
+			if x >= y:
+				break
+		return column, value
+
+	elif not maximizingPlayer: 
+		value = math.inf
+		column = random.choice(valid_locations)
+		for col in valid_locations:
+			row = get_available_row_in_column(board, col)
+			temporary_board = board.copy()
+			drop_piece(temporary_board, row, col, opp_piece)
+			new_score = minimax(temporary_board, depth - 1, x, y, piece, True)[1]
+			if new_score < value:
+				value = new_score
+				column = col
+			y = min(y, value)
+			if x >= y:
+				break
+		return column, value
+
 board = create_board()
 print_board(board)
 game_over = False
 first_move_done = False
 
 pygame.init()
+pygame.display.set_caption('Connecting four but with AI')
+pygame.display.set_icon(pygame.image.load('Logo.png'))
 myfont = pygame.font.SysFont("monospace", 75)
 
 box_size = 100
@@ -185,13 +244,14 @@ while not game_over:
 			turn += 1
 		else:
 			col = random.randint(0, COLUMN_COUNT-1)
-			col = pick_best_move(board, AI_1_PIECE)
+			# col = pick_best_move(board, AI_1_PIECE)
+			col, minimax_score = minimax(board, DEPTH, -math.inf, math.inf, turn + 1, True)
 			if is_valid_location(board, col):
 				row = get_available_row_in_column(board, col)
 				drop_piece(board, row, col, AI_1_PIECE)
 				if check_winning_move(board, AI_1_PIECE):
-					label = myfont.render("Player 1 wins!!", 1, RED)
-					screen.blit(label, (40,10))
+					label = myfont.render("RED AI wins!", 1, RED)
+					screen.blit(label, (100,10))
 					game_over = True
 				print_board(board)
 				draw_board(board)
@@ -206,17 +266,18 @@ while not game_over:
 			turn -= 1
 		else:
 			col = random.randint(0, COLUMN_COUNT-1)
-			col = pick_best_move(board, AI_2_PIECE)
+			# col = pick_best_move(board, AI_2_PIECE)
+			col, minimax_score = minimax(board, DEPTH, -math.inf, math.inf, turn + 1, True)
 			if is_valid_location(board, col):
 				row = get_available_row_in_column(board, col)
 				drop_piece(board, row, col, AI_2_PIECE)
 				if check_winning_move(board, AI_2_PIECE):
-					label = myfont.render("Player 2 wins!!", 1, YELLOW)
-					screen.blit(label, (40,10))
+					label = myfont.render("YELLOW AI wins!", 1, YELLOW)
+					screen.blit(label, (20,10))
 					game_over = True
 				print_board(board)
 				draw_board(board)
 				turn -= 1
 
 	if game_over:
-		pygame.time.wait(3000)
+		pygame.time.wait(5000)
