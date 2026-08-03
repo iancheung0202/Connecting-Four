@@ -1,6 +1,6 @@
 # Connecting Four AI
 
-A simple classic Connect Four game built in Python with Pygame as part of a Python game development class I took in 2021. 
+A simple classic Connect Four game built in Python with Pygame as part of a Python game development class I took in 2022. 
 
 ## Running
 
